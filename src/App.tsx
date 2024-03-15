@@ -1,35 +1,47 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import './App.css';
+import { useState, useEffect } from 'react';
+import detectEthereumProvider from '@metamask/detect-provider';
 
-function App() {
-  const [count, setCount] = useState(0)
+const App = () => {
+  const [hasProvider, setHasProvider] = useState<boolean | null>(null);
+  const initialState = { accounts: [] }; /* New */
+  const [wallet, setWallet] = useState(initialState); /* New */
+
+  useEffect(() => {
+    const getProvider = async () => {
+      const provider = await detectEthereumProvider({ silent: true });
+      setHasProvider(Boolean(provider));
+    };
+
+    getProvider();
+  }, []);
+
+  const updateWallet = async (accounts: any) => {
+    /* New */
+    setWallet({ accounts }); /* New */
+  }; /* New */
+
+  const handleConnect = async () => {
+    /* New */
+    const accounts = await window.ethereum.request({
+      /* New */ method: 'eth_requestAccounts' /* New */,
+    }); /* New */
+    updateWallet(accounts); /* New */
+  }; /* New */
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <div className="App">
+      <div>Injected Provider {hasProvider ? 'DOES' : 'DOES NOT'} Exist</div>
 
-export default App
+      {hasProvider /* Updated */ && (
+        <button onClick={handleConnect}>Connect MetaMask</button>
+      )}
+
+      {wallet.accounts.length > 0 /* New */ && (
+        <div>Wallet Accounts: {wallet.accounts[0]}</div>
+      )}
+    </div>
+  );
+};
+
+export default App;
