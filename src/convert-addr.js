@@ -1,3 +1,4 @@
+// @ts-check
 import process from 'node:process';
 import { Mnemonic, ethers } from 'ethers';
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing';
@@ -7,6 +8,22 @@ import { stringToPath } from '@cosmjs/crypto';
 
 import crypto from 'node:crypto';
 import { bech32 } from 'bech32';
+
+/** @param {string} msg */
+export const personalDigest = msg => {
+  const { MessagePrefix, id } = ethers;
+  const prefixed = `${MessagePrefix}${msg.length}${msg}`;
+  const digest = id(prefixed);
+  return { prefixed, digest };
+};
+
+export const recoverPublicKey = (msg, sig) => {
+  const { SigningKey } = ethers;
+  const { digest } = personalDigest(msg);
+  const recovered = SigningKey.recoverPublicKey(digest, sig);
+  const publicKey = SigningKey.computePublicKey(recovered, true);
+  return publicKey;
+};
 
 // bech32 spec https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki 2017-03-20
 
