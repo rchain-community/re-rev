@@ -15,7 +15,6 @@
     "@cosmjs/proto-signing": "^0.32.3",
     "@metamask/detect-provider": "^2.0.0",
     "@metamask/sdk": "^0.17.2",
-    "@metamask/sdk-react": "^0.17.2",
     "bech32": "^2.0.0",
     "blakejs": "^1.2.1",
     "ethers": "^6.11.1",
