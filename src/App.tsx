@@ -1,25 +1,25 @@
 import './App.css';
 import { useState, useEffect } from 'react';
-import { formatBalance, formatChainAsNum } from './utils';
-import { Base16 } from './codec';
 import detectEthereumProvider from '@metamask/detect-provider';
-import { useSDK } from '@metamask/sdk-react';
+import { formatBalance, formatChainAsNum } from './utils';
+import { Base16 } from './codec.js';
+import {
+  recoverPublicKey,
+  personalDigest,
+  getAddrFromEth,
+  pubKeyToCosmosAddr,
+} from './convert-addr.js';
 
 const App = () => {
-  const { sdk } = useSDK();
-  // const { sdk, connected, connecting, provider, chainId, account, balance } = useSDK();
-
-  const [signedMessage, setSignedMessage] = useState('');
-
   const [hasProvider, setHasProvider] = useState<boolean | null>(null);
   const initialState = { accounts: [], balance: '', chainId: '' };
   const [wallet, setWallet] = useState(initialState);
 
-  const [isConnecting, setIsConnecting] = useState(false); /* New */
-  const [error, setError] = useState(false); /* New */
-  const [errorMessage, setErrorMessage] = useState(''); /* New */
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const [swieResult, setSwieResult] = useState(null);
+  const [publicKey, setPublicKey] = useState(null);
 
   useEffect(() => {
     const refreshAccounts = (accounts: any) => {
@@ -71,94 +71,86 @@ const App = () => {
   };
 
   const handleConnect = async () => {
-    /* Updated */
-    setIsConnecting(true); /* New */
+    setIsConnecting(true);
     await window.ethereum
       .request({
-        /* Updated */ method: 'eth_requestAccounts',
+        method: 'eth_requestAccounts',
       })
       .then((accounts: []) => {
-        /* New */
-        setError(false); /* New */
-        updateWallet(accounts); /* New */
-      }) /* New */
+        setError(false);
+        updateWallet(accounts);
+      })
       .catch((err: any) => {
-        /* New */
-        setError(true); /* New */
-        setErrorMessage(err.message); /* New */
-      }); /* New */
-    setIsConnecting(false); /* New */
+        setError(true);
+        setErrorMessage(err.message);
+      });
+    setIsConnecting(false);
   };
 
   const disableConnect = Boolean(wallet) && isConnecting;
 
-  const fail = (msg: string) => {
-    throw new Error(msg);
-  };
-
   const siweSign = async (siweMessage: string) => {
-    const $ = (sel: string) => document.querySelector(sel) || fail(sel);
     try {
       const from = wallet.accounts[0];
       const msg = `0x${Base16.encodeText(siweMessage)}`;
-      const fullMsg = `\x19Ethereum Signed Message:\n${siweMessage.length}${siweMessage}`;
-      console.log('@@sign', {
-        from,
-        msg,
-        fullMsg,
-        fullHex: Base16.encodeText(fullMsg),
-      });
+      const { digest } = personalDigest(msg);
+      console.log('@@sign', { from, msg, digest });
       const sign = await window.ethereum.request({
         method: 'personal_sign',
         params: [msg, from],
       });
-      setSwieResult(sign);
+
+      const publicKey = recoverPublicKey(msg, sign);
+      console.log('@@@', { sign, publicKey });
+      setPublicKey(publicKey);
     } catch (err) {
-      console.error(err);
-      setSwieResult(err.message);
+      setError(true);
+      err instanceof Error && setErrorMessage(err.message);
     }
   };
 
   const signIn = async (location: typeof window.location) => {
     const from = wallet.accounts[0];
-    // const siweMessage = `${location.origin} wants you to sign in with your Ethereum account:\n${from}\n\nI accept the MetaMask Terms of Service: https://community.metamask.io/tos\n\nURI: ${location.origin}\nVersion: 1\nChain ID: 1\nNonce: 32891757\nIssued At: 2021-09-30T16:25:24.000Z`;
-    const siweMessage = 'reREV';
+    const siweMessage = `${location.origin} wants you to sign in with your Ethereum account:\n${from}\n\nI accept the MetaMask Terms of Service: https://community.metamask.io/tos\n\nURI: ${location.origin}\nVersion: 1\nChain ID: 1\nNonce: 32891757\nIssued At: 2021-09-30T16:25:24.000Z`;
+    // const siweMessage = 'reREV';
     siweSign(siweMessage);
-  };
-
-  const signIn2 = async () => {
-    try {
-      const message = 'Your message here';
-      const signature = await sdk?.connectAndSign({ msg: message });
-      setSignedMessage(signature);
-    } catch (error) {
-      setError(true);
-      setErrorMessage(
-        `Error in signing:, ${
-          error instanceof Error ? error.message : JSON.stringify(error)
-        }`,
-      );
-    }
   };
 
   return (
     <div className="App">
-      <div>Injected Provider {hasProvider ? 'DOES' : 'DOES NOT'} Exist</div>
+      <h1>reREV (WIP)</h1>
 
-      {window.ethereum?.isMetaMask &&
-        wallet.accounts.length < 1 /* Updated */ && (
-          <button disabled={disableConnect} onClick={handleConnect}>
-            Connect MetaMask
-          </button>
-        )}
+      <div className="debug">
+        Injected Provider {hasProvider ? 'DOES' : 'DOES NOT'} Exist
+      </div>
+
+      {window.ethereum?.isMetaMask && wallet.accounts.length < 1 && (
+        <button disabled={disableConnect} onClick={handleConnect}>
+          Connect ETH Provider
+        </button>
+      )}
 
       {wallet.accounts.length > 0 && (
-        <>
-          <div>Wallet Accounts: {wallet.accounts[0]}</div>
-          <div>Wallet Balance: {wallet.balance}</div>
-          <div>Hex ChainId: {wallet.chainId}</div>
-          <div>Numeric ChainId: {formatChainAsNum(wallet.chainId)}</div>
-        </>
+        <fieldset>
+          <label>
+            ETH Address: <input value={wallet.accounts[0]} readOnly size={44} />
+          </label>
+          <br />
+          <label>
+            REV Address:{' '}
+            <input
+              value={getAddrFromEth(wallet.accounts[0])}
+              readOnly
+              size={44}
+            />
+          </label>
+          <br />
+          <div className="debug">Wallet Balance: {wallet.balance}</div>
+          <div className="debug">Hex ChainId: {wallet.chainId}</div>
+          <div className="debug">
+            Numeric ChainId: {formatChainAsNum(wallet.chainId)}
+          </div>
+        </fieldset>
       )}
       {error /* New code block */ && (
         <div onClick={() => setError(false)}>
@@ -166,24 +158,33 @@ const App = () => {
         </div>
       )}
 
-      <h2>Sign-In</h2>
-      <button type="button" onClick={signIn2}>
-        Sign In
-      </button>
-      {signedMessage && <p>Signed Message: {signedMessage}</p>}
-
-      <h4>Sign-In with Ethereum</h4>
       <button
         type="button"
         id="siwe"
         disabled={wallet.accounts.length === 0}
         onClick={() => signIn(window.location)}
       >
-        Sign-In with Ethereum
+        Sign-In
       </button>
-      <p className="alert">
-        Result:<span id="siweResult">{swieResult}</span>
-      </p>
+      {publicKey && (
+        <fieldset>
+          <label>
+            Public Key: <input value={publicKey} readOnly size={64} />
+          </label>
+          <br />
+          <label>
+            Juno Address*:{' '}
+            <input
+              value={pubKeyToCosmosAddr(publicKey, 'juno')}
+              readOnly
+              size={64}
+            />
+          </label>
+          <p>
+            <strong>* with coinType 60</strong>
+          </p>
+        </fieldset>
+      )}
     </div>
   );
 };

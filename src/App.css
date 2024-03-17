@@ -8,3 +8,5 @@
 button {
   margin-top: 0.5em;
 }
+
+.debug { display: none; }
