@@ -97,7 +97,7 @@ const REV = { coinId: '000000', version: '00' };
  * ref https://github.com/rchain-community/rchain-api/blob/master/src/rev-address.js
  */
 export const getAddrFromEth = ethAddrRaw => {
-  const { keccak256, encodeBase58, toUtf8Bytes } = ethers;
+  const { keccak256, encodeBase58 } = ethers;
   const ethAddr = ethAddrRaw.replace(/^0x/, '');
   if (!ethAddr || ethAddr.length !== 40) return null;
 
