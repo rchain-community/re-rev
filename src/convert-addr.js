@@ -52,7 +52,7 @@ export const pkToBech32 = (data, prefix) => {
 };
 
 // https://github.com/Agoric/agoric-sdk/discussions/5830
-const getAgoricHdPath = (coinType = agoricChain.coinType, account = 0) =>
+export const getHdPath = (coinType = agoricChain.coinType, account = 0) =>
   stringToPath(`m/44'/${coinType}'/${account}'/0/0`);
 
 export const Base16 = freeze({
@@ -139,20 +139,14 @@ export const main = async (io = {}) => {
     env.REREV_MNEMONIC,
     {
       prefix: agoricChain.bech32PrefixAccAddr,
-      hdPaths: [getAgoricHdPath(60)],
+      hdPaths: [getHdPath(60)],
     },
   );
   const accounts = await agWallet.getAccounts();
   console.log({ accounts });
   console.log(accounts.map(a => Buffer.from(a.pubkey)));
 
-  //   const pubkey = {
-  //     type: 'tendermint/PubKeySecp256k1',
-  //     value: Buffer.from(wallet.publicKey.replace(/^0x/, ''), 'hex'),
-  //   };
-  //   const jaddr = pubkeyToAddress(pubkey, 'agoric');
-  const pubKey = Buffer.from(wallet.publicKey.replace(/^0x/, ''), 'hex');
-  console.log({ pubKey });
-  const jaddr = pkToBech32(pubKey, 'agoric');
+  const jaddr = pubKeyToCosmosAddr(wallet.publicKey, 'agoric');
+
   console.log(jaddr);
 };

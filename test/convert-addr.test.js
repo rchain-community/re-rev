@@ -2,20 +2,25 @@
 
 import anyTest from 'ava';
 import { Mnemonic, ethers } from 'ethers';
-import { pubkeyToAddress } from '@cosmjs/amino';
-import { toBase64 } from '@cosmjs/encoding';
 import {
   getAddrFromEth,
+  getHdPath,
   personalDigest,
   pubKeyToCosmosAddr,
   recoverPublicKey,
 } from '../src/convert-addr.js';
+import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing';
+
+/** https://github.com/satoshilabs/slips/blob/master/slip-0044.md */
+const coinType = { ETH: 60 };
 
 const acct1 = {
   phrase: `purchase practice song follow wall soda
     matter cloud pudding combine material
     repeat pelican typical renew hold banana
-    pigeon machine enact paddle parade hour album`,
+    pigeon machine enact paddle parade hour album`
+    .trim()
+    .replace(/[\n\r\t ]+/g, ' '),
   revAddr: '11111he8e2YukkSLDUtzuZJhfVpENpZAX9RfBZj9Qrw377u6baFB7p',
 };
 
@@ -89,4 +94,16 @@ test('derive cosmos address from public key', t => {
     t.log({ publicKey, cosmos: actual });
     t.is(actual, expected);
   }
+});
+
+test('keplr config for eth-to-cosmos', async t => {
+  const opts = { prefix: 'juno', hdPaths: [getHdPath(coinType.ETH)] };
+
+  const { ethWallet } = t.context;
+  const { phrase } = acct1;
+  const cosWallet = await DirectSecp256k1HdWallet.fromMnemonic(phrase, opts);
+
+  const expected = pubKeyToCosmosAddr(ethWallet.publicKey, opts.prefix);
+  const [actual] = await cosWallet.getAccounts();
+  t.is(actual.address, expected);
 });
