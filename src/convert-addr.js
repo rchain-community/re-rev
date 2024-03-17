@@ -6,6 +6,8 @@ import blake from 'blakejs';
 import { Mnemonic, ethers } from 'ethers';
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing';
 import { stringToPath } from '@cosmjs/crypto';
+import { pubkeyToAddress } from '@cosmjs/amino';
+import { toBase64 } from '@cosmjs/encoding';
 
 // import { pubkeyToAddress } from '@cosmjs/amino';
 
@@ -35,10 +37,8 @@ export const recoverPublicKey = (msg, sig) => {
 // bech32 spec https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki 2017-03-20
 
 export const pkToBech32 = (data, prefix) => {
-  const sha256Digest = crypto
-    .createHash('sha256')
-    .update(data, 'hex')
-    .digest('hex');
+  console.log('pkToBech32', data);
+  const sha256Digest = crypto.createHash('sha256').update(data).digest('hex');
 
   const ripemd160Digest = crypto
     .createHash('ripemd160')
@@ -112,6 +112,21 @@ export const getAddrFromEth = ethAddrRaw => {
 
   // Return REV address
   return encodeBase58(Base16.decode(`${payload}${checksum}`));
+};
+
+/**
+ * See also: agd debug pubkey-raw
+ *
+ * @param {string} publicKey compressed secp256k1 public key in hex
+ * @param {string} prefix
+ */
+export const pubKeyToCosmosAddr = (publicKey, prefix) => {
+  const pubkey = {
+    type: 'tendermint/PubKeySecp256k1',
+    value: toBase64(Base16.decode(publicKey.replace(/^0x/, ''))),
+  };
+  const cosmosAddr = pubkeyToAddress(pubkey, prefix);
+  return cosmosAddr;
 };
 
 export const main = async (io = {}) => {
