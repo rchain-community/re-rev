@@ -4,10 +4,9 @@ import { ethers } from 'ethers';
 import { stringToPath } from '@cosmjs/crypto';
 import { pubkeyToAddress } from '@cosmjs/amino';
 import { toBase64 } from '@cosmjs/encoding';
+import { Base16 } from './codec.js';
 
 // import { pubkeyToAddress } from '@cosmjs/amino';
-
-const { freeze } = Object;
 
 const agoricChain = {
   bech32PrefixAccAddr: 'agoric',
@@ -33,36 +32,6 @@ export const recoverPublicKey = (msg, sig) => {
 // https://github.com/Agoric/agoric-sdk/discussions/5830
 export const getHdPath = (coinType = agoricChain.coinType, account = 0) =>
   stringToPath(`m/44'/${coinType}'/${account}'/0/0`);
-
-export const Base16 = freeze({
-  /**
-   * Encode bytes to base 16 string.
-   *
-   * @param {Uint8Array | number[]} bytes
-   * @returns { string }
-   */
-  encode(bytes) {
-    return (
-      Array.from(bytes)
-        // eslint-disable-next-line no-bitwise
-        .map(x => (x & 0xff).toString(16).padStart(2, '0'))
-        .join('')
-    );
-  },
-
-  /**
-   * Decode base 16 string to bytes.
-   *
-   * @param {string} hexStr
-   */
-  decode: hexStr => {
-    const removed0x = hexStr.replace(/^0x/, '');
-    const byte2hex = ([arr, bhi], x) =>
-      bhi ? [[...arr, parseInt(`${bhi}${x}`, 16)]] : [arr, x];
-    const [resArr] = Array.from(removed0x).reduce(byte2hex, [[]]);
-    return Uint8Array.from(resArr);
-  },
-});
 
 // Prefix as defined in https://github.com/rchain/rchain/blob/c6721a6/rholang/src/main/scala/coop/rchain/rholang/interpreter/util/RevAddress.scala#L13
 const REV = { coinId: '000000', version: '00' };
