@@ -79,5 +79,3 @@ const main = async (io = {}) => {
   const jaddr = pkToBech32(pubKey, 'agoric');
   console.log(jaddr);
 };
-
-main();
