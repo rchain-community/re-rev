@@ -1,10 +1,6 @@
 // @ts-check
-import process from 'node:process';
-import crypto from 'node:crypto';
-import { bech32 } from 'bech32';
 import blake from 'blakejs';
-import { Mnemonic, ethers } from 'ethers';
-import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing';
+import { ethers } from 'ethers';
 import { stringToPath } from '@cosmjs/crypto';
 import { pubkeyToAddress } from '@cosmjs/amino';
 import { toBase64 } from '@cosmjs/encoding';
@@ -32,23 +28,6 @@ export const recoverPublicKey = (msg, sig) => {
   const recovered = SigningKey.recoverPublicKey(digest, sig);
   const publicKey = SigningKey.computePublicKey(recovered, true);
   return publicKey;
-};
-
-// bech32 spec https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki 2017-03-20
-
-export const pkToBech32 = (data, prefix) => {
-  console.log('pkToBech32', data);
-  const sha256Digest = crypto.createHash('sha256').update(data).digest('hex');
-
-  const ripemd160Digest = crypto
-    .createHash('ripemd160')
-    .update(sha256Digest, 'hex')
-    .digest('hex');
-
-  const bech32Words = bech32.toWords(Base16.decode(ripemd160Digest));
-  const words = new Uint8Array([0, ...bech32Words]);
-  const address = bech32.encode(prefix, words);
-  return address;
 };
 
 // https://github.com/Agoric/agoric-sdk/discussions/5830
@@ -127,26 +106,4 @@ export const pubKeyToCosmosAddr = (publicKey, prefix) => {
   };
   const cosmosAddr = pubkeyToAddress(pubkey, prefix);
   return cosmosAddr;
-};
-
-export const main = async (io = {}) => {
-  const { env = process.env } = io;
-  const mnemonic = Mnemonic.fromPhrase(env.REREV_MNEMONIC);
-  const wallet = ethers.HDNodeWallet.fromMnemonic(mnemonic);
-  console.log(wallet);
-
-  const agWallet = await DirectSecp256k1HdWallet.fromMnemonic(
-    env.REREV_MNEMONIC,
-    {
-      prefix: agoricChain.bech32PrefixAccAddr,
-      hdPaths: [getHdPath(60)],
-    },
-  );
-  const accounts = await agWallet.getAccounts();
-  console.log({ accounts });
-  console.log(accounts.map(a => Buffer.from(a.pubkey)));
-
-  const jaddr = pubKeyToCosmosAddr(wallet.publicKey, 'agoric');
-
-  console.log(jaddr);
 };
