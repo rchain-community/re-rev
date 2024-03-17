@@ -2,27 +2,27 @@ import './App.css';
 import { useState, useEffect } from 'react';
 import detectEthereumProvider from '@metamask/detect-provider';
 import { formatBalance, formatChainAsNum } from './utils';
-import { Base16 } from './codec.js';
+import { Base16 } from './codec';
 import {
   recoverPublicKey,
   personalDigest,
   getAddrFromEth,
   pubKeyToCosmosAddr,
-} from './convert-addr.js';
+} from './convert-addr';
 
 const App = () => {
   const [hasProvider, setHasProvider] = useState<boolean | null>(null);
-  const initialState = { accounts: [], balance: '', chainId: '' };
+  const initialState = { accounts: [] as string[], balance: '', chainId: '' };
   const [wallet, setWallet] = useState(initialState);
 
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const [publicKey, setPublicKey] = useState(null);
+  const [publicKey, setPublicKey] = useState<string | null>(null);
 
   useEffect(() => {
-    const refreshAccounts = (accounts: any) => {
+    const refreshAccounts = (accounts: string[]) => {
       if (accounts.length > 0) {
         updateWallet(accounts);
       } else {
@@ -31,7 +31,7 @@ const App = () => {
       }
     };
 
-    const refreshChain = (chainId: any) => {
+    const refreshChain = (chainId: string) => {
       setWallet(wallet => ({ ...wallet, chainId }));
     };
 
@@ -57,7 +57,7 @@ const App = () => {
     };
   }, []);
 
-  const updateWallet = async (accounts: any) => {
+  const updateWallet = async (accounts: string[]) => {
     const balance = formatBalance(
       await window.ethereum!.request({
         method: 'eth_getBalance',
@@ -80,7 +80,7 @@ const App = () => {
         setError(false);
         updateWallet(accounts);
       })
-      .catch((err: any) => {
+      .catch((err: Error) => {
         setError(true);
         setErrorMessage(err.message);
       });
@@ -139,7 +139,7 @@ const App = () => {
           <label>
             REV Address:{' '}
             <input
-              value={getAddrFromEth(wallet.accounts[0])}
+              value={getAddrFromEth(wallet.accounts[0]) || ''}
               readOnly
               size={44}
             />

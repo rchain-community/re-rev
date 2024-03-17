@@ -13,15 +13,14 @@ const agoricChain = {
   coinType: 564,
 };
 
-/** @param {string} msg */
-export const personalDigest = msg => {
+export const personalDigest = (msg: string) => {
   const { MessagePrefix, id } = ethers;
   const prefixed = `${MessagePrefix}${msg.length}${msg}`;
   const digest = id(prefixed);
   return { prefixed, digest };
 };
 
-export const recoverPublicKey = (msg, sig) => {
+export const recoverPublicKey = (msg: string, sig: string) => {
   const { SigningKey } = ethers;
   const { digest } = personalDigest(msg);
   const recovered = SigningKey.recoverPublicKey(digest, sig);
@@ -39,12 +38,9 @@ const REV = { coinId: '000000', version: '00' };
 /**
  * Get REV address from ETH address.
  *
- * @param {string} ethAddrRaw
- * @returns {string | null}
- *
  * ref https://github.com/rchain-community/rchain-api/blob/master/src/rev-address.js
  */
-export const getAddrFromEth = ethAddrRaw => {
+export const getAddrFromEth = (ethAddrRaw: string): string | null => {
   const { keccak256, encodeBase58 } = ethers;
   const ethAddr = ethAddrRaw.replace(/^0x/, '');
   if (!ethAddr || ethAddr.length !== 40) return null;
@@ -65,10 +61,9 @@ export const getAddrFromEth = ethAddrRaw => {
 /**
  * See also: agd debug pubkey-raw
  *
- * @param {string} publicKey compressed secp256k1 public key in hex
- * @param {string} prefix
+ * @param publicKey compressed secp256k1 public key in hex
  */
-export const pubKeyToCosmosAddr = (publicKey, prefix) => {
+export const pubKeyToCosmosAddr = (publicKey: string, prefix: string) => {
   const pubkey = {
     type: 'tendermint/PubKeySecp256k1',
     value: toBase64(Base16.decode(publicKey.replace(/^0x/, ''))),

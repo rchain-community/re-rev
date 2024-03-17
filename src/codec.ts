@@ -6,11 +6,8 @@ const te = freeze(new TextEncoder());
 export const Base16 = freeze({
   /**
    * Encode bytes to base 16 string.
-   *
-   * @param {Uint8Array | number[]} bytes
-   * @returns { string }
    */
-  encode(bytes) {
+  encode(bytes: Uint8Array | number[]): string {
     return (
       Array.from(bytes)
         // eslint-disable-next-line no-bitwise
@@ -19,22 +16,20 @@ export const Base16 = freeze({
     );
   },
 
-  encodeText(txt) {
+  encodeText(txt: string) {
     const bytes = te.encode(txt);
     return Base16.encode(bytes);
   },
 
   /**
    * Decode base 16 string to bytes.
-   *
-   * @param {string} hexStr
    */
-  decode: hexStr => {
+  decode: (hexStr: string) => {
     const removed0x = hexStr.replace(/^0x/, '');
     const [resArr] = Array.from(removed0x).reduce(
-      ([arr, bhi], x) =>
-        bhi ? [[...arr, parseInt(`${bhi}${x}`, 16)]] : [arr, x],
-      [[]],
+      ([arr, bhi], x: string) =>
+        bhi ? [[...arr, parseInt(`${bhi}${x}`, 16)], null] : [arr, x],
+      [[], null] as [number[], string | null],
     );
     return Uint8Array.from(resArr);
   },
@@ -43,19 +38,15 @@ export const Base16 = freeze({
    * Encode bytes as hex string
    *
    * ISSUE: uses Buffer API. Require this for browsers?
-   * @param {Uint8Array | Buffer} bytes
-   * @returns { string }
    */
-  encodeBuf(bytes) {
+  encodeBuf(bytes: Uint8Array | Buffer): string {
     return Buffer.from(bytes).toString('hex');
   },
 
   /**
    * Decode hex string to bytes
-   * @param {string} hex in hex (base16)
-   * @returns { Buffer }
    */
-  decodeBuf(hex) {
+  decodeBuf(hex: string): Buffer {
     return Buffer.from(hex, 'hex');
   },
 });
